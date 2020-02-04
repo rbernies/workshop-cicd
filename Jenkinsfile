@@ -8,7 +8,8 @@ pipeline {
                 docker { image 'node:alpine' }
             }
             steps {
-                echo 'Prepare'
+                dir('code/frontend'){sh 'npm install'}
+                dir('code/backend'){sh 'npm install'}
             }
         }
         stage('Build') {
@@ -16,7 +17,8 @@ pipeline {
                 docker { image 'node:alpine' }
             }
             steps {
-                echo 'Build'      
+		sh 'docker-compose -f docker-compose.yml build'
+                sh 'npm run build'  
             }
         }
         stage('Static Analysis') {
@@ -37,17 +39,17 @@ pipeline {
         }
         stage('e2e Test') {
             steps {             
-                echo 'e2e Test'
+                sh 'docker-compose -f docker-compose-e2e.yml up -d frontend backend'
             }
             post {
                 always {
-                    echo 'Cleanup'
+                    sh 'docker-compose -f docker-compose-e2e.yml down --rmi=all -v'
                 }
             }
         }
         stage('Deploy') {
             steps {                
-                echo 'Deploy'
+                sh 'docker-compose -f docker-compose.yml up -d'
             }
         }
     }
